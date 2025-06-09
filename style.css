@@ -1,0 +1,81 @@
+/* style.css */
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #f9f9f9;
+  padding: 20px;
+  margin: 0;
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.number-display {
+  font-size: 120px;
+  background-color: black;
+  color: white;
+  padding: 20px 40px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.status-log {
+  margin-top: 16px;
+  font-weight: bold;
+  padding: 10px;
+  border-radius: 8px;
+  min-height: 48px;
+}
+
+.status-success {
+  background-color: #d4f5dc;
+  color: #0b3d1c;
+}
+
+.status-fail {
+  background-color: #f8d7da;
+  color: #842029;
+}
+
+.topbar {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+.job-title,
+.process-name {
+  font-size: 18px;
+  font-weight: 500;
+  margin-top: 10px;
+}
+
+.hidden {
+  display: none;
+}
+
+.btn {
+  font-size: 16px;
+  padding: 12px;
+  border-radius: 8px;
+  width: 100%;
+}
+
+.btn-warning {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+@media (max-width: 768px) {
+  .number-display {
+    font-size: 72px;
+  }
+
+  .btn {
+    font-size: 14px;
+    padding: 10px;
+  }
+}

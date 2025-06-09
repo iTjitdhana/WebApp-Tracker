@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>ESP Tracker UI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="topbar">
+    <button class="btn btn-sm btn-outline-secondary" onclick="window.location.href='logs.html'">☰</button>
+  </div>
+
+  <div class="container mt-5">
+    <div class="mb-3">
+      <select class="form-select w-auto" id="device-select" onchange="updateFromDropdown()">
+        <option value="01">เครื่อง-01</option>
+        <option value="02">เครื่อง-02</option>
+        <option value="03">เครื่อง-03</option>
+        <option value="04">เครื่อง-04</option>
+        <option value="05">เครื่อง-05</option>
+        <option value="06">เครื่อง-06</option>
+        <option value="07">เครื่อง-07</option>
+        <option value="08">เครื่อง-08</option>
+        <option value="09">เครื่อง-09</option>
+        <option value="10">เครื่อง-10</option>
+        <option value="11">เครื่อง-11</option>
+        <option value="12">เครื่อง-12</option>
+        <option value="13">เครื่อง-13</option>
+        <option value="14">เครื่อง-14</option>
+        <option value="15">เครื่อง-15</option>
+        <option value="16">เครื่อง-16</option>
+        <option value="17">เครื่อง-17</option>
+        <option value="18">เครื่อง-18</option>
+        <option value="19">เครื่อง-19</option>
+        <option value="20">เครื่อง-20</option>
+      </select>
+    </div>
+
+    <div class="row align-items-center bg-white rounded p-4 shadow mx-1">
+      <div class="col-md-6 text-center">
+        <div class="job-title hidden" id="job-title">ซี่โครงตุ๋น 170 กรัม (1แพ็ค /1จาน )</div>
+        <div class="number-display" id="num-display">01</div>
+        <div class="process-name hidden" id="process-name">1 | เตรียมอุปกรณ์</div>
+        <div class="status-log bg-light" id="status-log">ยังไม่ส่งข้อมูล</div>
+      </div>
+      <div class="col-md-6 d-flex flex-column gap-3">
+        <button class="btn btn-danger btn-lg" onclick="sendToLocal(false)">⛔ หยุดงาน</button>
+        <button class="btn btn-success btn-lg" onclick="sendToLocal(true)">✅ เริ่มงาน</button>
+        <div class="d-flex flex-column gap-2">
+          <button class="btn btn-warning" onclick="changeNumber(1)">▲</button>
+          <button class="btn btn-warning" onclick="changeNumber(-1)">▼</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let number = 1;
+    const processMap = {
+      1: "เตรียมอุปกรณ์",
+      2: "ชั่งน้ำ ใส่เครื่องปรุง ใส่ซี่โครง รอบที่ 1",
+      3: "ตุ๋น 30 นาที, ล้างหม้อ, แพ็ค รอบที่ 1",
+      4: "ชั่งน้ำ ใส่เครื่องปรุง ใส่ซี่โครง รอบที่ 2",
+      5: "ตุ๋น 30 นาที, ล้างหม้อ, แพ็ค รอบที่ 2",
+      6: "ชั่งน้ำ ใส่เครื่องปรุง ใส่ซี่โครง รอบที่ 3",
+      7: "ตุ๋น 30 นาที, ล้างหม้อ, แพ็ค รอบที่ 3",
+      8: "ชั่งน้ำ ใส่เครื่องปรุง ใส่ซี่โครง รอบที่ 4",
+      9: "ตุ๋น 30 นาที, ล้างหม้อ, แพ็ค รอบที่ 4",
+      10: "ชั่งน้ำ ใส่เครื่องปรุง ใส่ซี่โครง รอบที่ 5",
+      11: "ตุ๋น 30 นาที, ล้างหม้อ, แพ็ค รอบที่ 5",
+      12: "ล้างอุปกรณ์"
+    };
+
+    function changeNumber(step) {
+      number += step;
+      if (number > 12) number = 1;
+      if (number < 1) number = 12;
+      updateDisplay();
+    }
+
+    function updateDisplay() {
+      document.getElementById("num-display").textContent = number.toString().padStart(2, '0');
+      const selectedDevice = document.getElementById("device-select").value;
+      const processName = document.getElementById("process-name");
+      const jobTitle = document.getElementById("job-title");
+
+      if (selectedDevice === "10") {
+        processName.classList.remove("hidden");
+        jobTitle.classList.remove("hidden");
+        processName.textContent = number + " | " + (processMap[number] || "");
+        jobTitle.textContent = "ซี่โครงตุ๋น 170 กรัม (1แพ็ค /1จาน )";
+      } else {
+        processName.classList.add("hidden");
+        jobTitle.classList.add("hidden");
+      }
+    }
+
+    function getCurrentTime() {
+      const now = new Date();
+      return now.toLocaleTimeString('th-TH', { hour12: false });
+    }
+
+    function sendToLocal(isStart) {
+      const deviceId = `ESP-${document.getElementById("device-select").value}`;
+      const timestamp = getCurrentTime();
+      const statusLog = document.getElementById("status-log");
+
+      statusLog.className = "status-log bg-light";
+      statusLog.textContent = `กำลังส่ง (${isStart ? "เริ่มงาน" : "หยุดงาน"})...`;
+
+      fetch("save.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `number=${number}&timestamp=${timestamp}&sheetName=Data&deviceId=${deviceId}&status=${isStart ? "start" : "stop"}`
+      })
+      .then(res => res.text())
+      .then(text => {
+        console.log(text);
+        statusLog.classList.add(isStart ? "status-success" : "status-fail");
+        statusLog.textContent = isStart ? "✅ Start สำเร็จแล้ว" : "⛔ Stop สำเร็จแล้ว";
+      })
+      .catch(err => {
+        statusLog.className = "status-log status-fail";
+        statusLog.textContent = "❌ เกิดข้อผิดพลาดในการส่งข้อมูล";
+        console.error(err);
+      });
+    }
+
+    updateDisplay();
+  </script>
+</body>
+</html>
