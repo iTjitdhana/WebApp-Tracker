@@ -1,17 +1,24 @@
 <!DOCTYPE html>
 <html lang="th">
+<<<<<<< HEAD
 
+=======
+>>>>>>> 5f1f7dddc238b747dd95c7e603130b9daec5b479
 <head>
   <meta charset="UTF-8" />
   <title>Audit Log</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
+<<<<<<< HEAD
 
+=======
+>>>>>>> 5f1f7dddc238b747dd95c7e603130b9daec5b479
 <body class="bg-light">
   <div class="container py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h2 class="fw-bold">📋 ประวัติการทำงาน</h2>
+<<<<<<< HEAD
       <div class="dropdown">
         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
           ☰ เมนู
@@ -26,6 +33,11 @@
     </div>
 
 
+=======
+      <a href="index.html" class="btn btn-outline-secondary">⬅️ กลับ</a>
+    </div>
+
+>>>>>>> 5f1f7dddc238b747dd95c7e603130b9daec5b479
     <div class="table-responsive">
       <table class="table table-bordered table-hover">
         <thead class="table-light">
@@ -39,9 +51,13 @@
           </tr>
         </thead>
         <tbody id="log-body">
+<<<<<<< HEAD
           <tr>
             <td colspan="6" class="text-center">⏳ Loading...</td>
           </tr>
+=======
+          <tr><td colspan="6" class="text-center">⏳ Loading...</td></tr>
+>>>>>>> 5f1f7dddc238b747dd95c7e603130b9daec5b479
         </tbody>
       </table>
     </div>
@@ -129,11 +145,19 @@
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `id=${id}&deviceId=${deviceId}&number=${number}&timestamp=${timestamp}`
       })
+<<<<<<< HEAD
         .then(res => res.text())
         .then(() => {
           modal.hide();
           fetchLogs();
         });
+=======
+      .then(res => res.text())
+      .then(() => {
+        modal.hide();
+        fetchLogs();
+      });
+>>>>>>> 5f1f7dddc238b747dd95c7e603130b9daec5b479
     }
 
     function deleteLog(id) {
@@ -143,12 +167,21 @@
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `delete=1&id=${id}`
       })
+<<<<<<< HEAD
         .then(res => res.text())
         .then(() => fetchLogs());
+=======
+      .then(res => res.text())
+      .then(() => fetchLogs());
+>>>>>>> 5f1f7dddc238b747dd95c7e603130b9daec5b479
     }
 
     fetchLogs();
   </script>
 </body>
+<<<<<<< HEAD
 
 </html>
+=======
+</html>
+>>>>>>> 5f1f7dddc238b747dd95c7e603130b9daec5b479
