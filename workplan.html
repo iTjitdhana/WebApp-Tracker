@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>Work Plan | ESP Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="fw-bold">📒 กำหนดรายละเอียดงาน</h2>
+      <a href="index.html" class="btn btn-outline-secondary">⬅️ กลับ</a>
+    </div>
+
+    <form id="work-plan-form">
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>ลำดับ</th>
+              <th>ชื่ออุปกรณ์</th>
+              <th>ชื่อของงาน</th>
+              <th>ผู้ปฏิบัติงาน</th>
+              <th>วันที่ผลิต</th>
+              <th>เริ่มตามแผน</th>
+              <th>สิ้นสุดตามแผน</th>
+            </tr>
+          </thead>
+          <tbody id="plan-body">
+            <!-- จะถูกเติมโดย JavaScript -->
+          </tbody>
+        </table>
+      </div>
+      <button type="submit" class="btn btn-primary mt-3">💾 บันทึกข้อมูล</button>
+    </form>
+  </div>
+
+  <script>
+    // สร้าง array สำหรับ ESP-01 ถึง ESP-20
+    const workPlans = Array.from({ length: 20 }, (_, i) => {
+      const id = `ESP-${(i + 1).toString().padStart(2, '0')}`;
+      return { id, name: "", operator: "", plan_date: "", start: "", end: "" };
+    });
+
+    const tbody = document.getElementById("plan-body");
+
+    workPlans.forEach((plan, index) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${index + 1}</td>
+        <td>${plan.id}</td>
+        <td><input type="text" name="name-${plan.id}" class="form-control" /></td>
+        <td><input type="text" name="operator-${plan.id}" class="form-control" /></td>
+        <td><input type="date" name="plan-${plan.id}" class="form-control" /></td>
+        <td><input type="time" name="start-${plan.id}" class="form-control" /></td>
+        <td><input type="time" name="end-${plan.id}" class="form-control" /></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById("work-plan-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const formData = new FormData(this);
+      const result = workPlans.map(plan => ({
+        id: plan.id,
+        name: formData.get(`name-${plan.id}`),
+        operator: formData.get(`operator-${plan.id}`),
+        plan_date: formData.get(`plan-${plan.id}`),
+        start: formData.get(`start-${plan.id}`),
+        end: formData.get(`end-${plan.id}`)
+      }));
+
+      fetch("save_plan.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(result)
+      })
+      .then(res => res.text())
+      .then(text => {
+        alert("✅ บันทึกแผนเรียบร้อยแล้ว");
+      })
+      .catch(err => {
+        console.error(err);
+        alert("❌ เกิดข้อผิดพลาดในการบันทึก");
+      });
+    });
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

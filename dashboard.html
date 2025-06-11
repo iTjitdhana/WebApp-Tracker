@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+      <meta charset="UTF-8" />
+      <title>Dashboard | ESP Tracker</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+      <link rel="stylesheet" href="dashboard.css" />
+</head>
+
+<body>
+      <div class="container py-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                  <h2 class="fw-bold">📊 สถานะปัจจุบันของอุปกรณ์</h2>
+
+                  <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button"
+                              data-bs-toggle="dropdown">
+                              ☰ เมนู
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                              <li><a class="dropdown-item" href="index.html">🏠 หน้าแรก</a></li>
+                              <li><a class="dropdown-item" href="logs.html">📋 Log ประวัติ</a></li>
+                              <li><a class="dropdown-item" href="dashboard.html">📊 Dashboard</a></li>
+                              <li><a class="dropdown-item" href="workplan.html">📝 แผนงานผลิต</a></li>
+                        </ul>
+
+                  </div>
+            </div>
+
+            <div class="row" id="card-container">
+                  <div class="col-12 text-center text-muted">⏳ กำลังโหลดข้อมูล...</div>
+            </div>
+      </div>
+
+      <script>
+            const deviceNameMap = {
+                  "ESP-01": "งานที่ 1",
+                  "ESP-02": "งานที่ 2",
+                  "ESP-03": "งานที่ 3",
+                  "ESP-04": "งานที่ 4",
+                  "ESP-05": "งานที่ 5",
+                  "ESP-06": "งานที่ 6",
+                  "ESP-07": "งานที่ 7",
+                  "ESP-08": "งานที่ 8",
+                  "ESP-09": "งานที่ 9",
+                  "ESP-10": "งานที่ 10",
+                  "ESP-11": "งานที่ 11",
+                  "ESP-12": "งานที่ 12",
+                  "ESP-13": "งานที่ 13",
+                  "ESP-14": "งานที่ 14",
+                  "ESP-15": "งานที่ 15",
+                  "ESP-16": "งานที่ 16",
+                  "ESP-17": "งานที่ 17",
+                  "ESP-18": "งานที่ 18",
+                  "ESP-19": "งานที่ 19",
+                  "ESP-20": "งานที่ 20"
+            };
+
+            fetch("get_data.php")
+                  .then(res => res.json())
+                  .then(data => {
+                        const latestByDevice = {};
+
+                        // หาข้อมูลล่าสุดของแต่ละ deviceId
+                        data.forEach(entry => {
+                              const id = entry.deviceId;
+                              if (!latestByDevice[id] || new Date(entry.timestamp) > new Date(latestByDevice[id].timestamp)) {
+                                    latestByDevice[id] = entry;
+                              }
+                        });
+
+                        const container = document.getElementById("card-container");
+                        container.innerHTML = "";
+
+                        Object.keys(latestByDevice).sort().forEach(deviceId => {
+                              const { number, timestamp, status } = latestByDevice[deviceId];
+                              const card = document.createElement("div");
+                              card.className = `col-md-4 mb-4`;
+
+                              card.innerHTML = `
+            <div class="card shadow card-status ${status === 'start' ? 'status-start' : 'status-stop'}">
+              <div class="card-body">
+                <h5 class="card-title">${deviceNameMap[deviceId] || deviceId}</h5>
+                <p class="card-text">ขั้นตอน: <strong>${number}</strong></p>
+                <p class="card-text">สถานะ: <strong>${status === "start" ? "🟢 ทำงานอยู่" : "🔴 หยุด"}</strong></p>
+                <p class="card-text"><small class="text-muted">อัปเดตล่าสุด: ${timestamp}</small></p>
+              </div>
+            </div>
+          `;
+                              container.appendChild(card);
+                        });
+                  })
+                  .catch(err => {
+                        document.getElementById("card-container").innerHTML = `<div class="alert alert-danger">❌ โหลดข้อมูลไม่สำเร็จ</div>`;
+                        console.error(err);
+                  });
+      </script>
+
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

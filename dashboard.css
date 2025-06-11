@@ -1,0 +1,42 @@
+body {
+  background-color: #f8f9fa;
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.card-status {
+  min-height: 180px;
+  border-left: 8px solid transparent;
+  transition: transform 0.2s ease;
+}
+
+.card-status:hover {
+  transform: translateY(-4px);
+}
+
+.status-start {
+  background-color: #d4f5dc;
+  border-left-color: #28a745;
+}
+
+.status-stop {
+  background-color: #f8d7da;
+  border-left-color: #dc3545;
+}
+
+.card-title {
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+.card-text small {
+  font-size: 0.85rem;
+  color: #6c757d;
+}
