@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <title>วางแผนการผลิต</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-light">
+    <div class="container py-5">
+      <h3 class="mb-3">📅 ใบสรุปงาน</h3>
+      <form method="POST" action="data/save_workplan.php">
+        <div class="mb-3">
+          <label for="production_date_display" class="form-label"
+            >วันที่ผลิต</label
+          >
+          <input
+            type="text"
+            id="production_date_display"
+            class="form-control"
+            placeholder="เลือกวันที่"
+            required
+          />
+          <input type="hidden" id="production_date" name="production_date" />
+        </div>
+
+        <div id="existingPlans" class="mb-4"></div>
+
+        <table class="table table-bordered job-table">
+          <thead class="table-light">
+            <tr>
+              <th>งานที่</th>
+              <th>ชื่อสินค้า</th>
+              <th>ผู้ปฏิบัติงาน 1</th>
+              <th>ผู้ปฏิบัติงาน 2</th>
+              <th>ผู้ปฏิบัติงาน 3</th>
+              <th>ผู้ปฏิบัติงาน 4</th>
+              <th>เริ่มต้น</th>
+              <th>สิ้นสุด</th>
+              <th>ลบ</th>
+            </tr>
+          </thead>
+          <tbody id="jobList"></tbody>
+        </table>
+
+        <div class="text-end">
+          <button type="button" class="btn btn-success me-2" onclick="addJob()">
+            ➕ เพิ่มงาน
+          </button>
+          <button type="submit" class="btn btn-primary">💾 บันทึกแผน</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/th.js"></script>
+    <script>
+      let selectedDate = "";
+      let productList = [];
+      let userList = [];
+
+      // ดึงข้อมูลสินค้าและผู้ปฏิบัติงาน
+      async function fetchProductsAndUsers() {
+        // ดึงสินค้า
+        const prodRes = await fetch("data/get_products.php");
+        const prodJson = await prodRes.json();
+        productList = prodJson.data || [];
+        // ดึงผู้ปฏิบัติงาน
+        const userRes = await fetch("data/get_users.php");
+        const userJson = await userRes.json();
+        userList = userJson.data || [];
+      }
+
+      document.addEventListener("DOMContentLoaded", async function () {
+        await fetchProductsAndUsers();
+        flatpickr("#production_date_display", {
+          dateFormat: "Y-m-d",
+          altInput: true,
+          altFormat: "d/m/Y",
+          defaultDate: new Date(),
+          locale: "th",
+          onChange: function (selectedDates) {
+            const ymd = selectedDates[0].toLocaleDateString("sv-SE");
+            selectedDate = ymd;
+            document.getElementById("production_date").value = ymd;
+            fetchExistingPlans(ymd);
+          },
+          onReady: function (selectedDates) {
+            if (selectedDates.length > 0) {
+              const ymd = selectedDates[0].toLocaleDateString("sv-SE");
+              selectedDate = ymd;
+              document.getElementById("production_date").value = ymd;
+              fetchExistingPlans(ymd);
+            }
+          },
+        });
+        const today = new Date().toLocaleDateString("sv-SE");
+        selectedDate = today;
+        document.getElementById("production_date").value = today;
+        fetchExistingPlans(today);
+      });
+
+      function addJob(data = {}) {
+        const row = document.createElement("tr");
+        row.classList.add("job-entry");
+
+        // dropdown สินค้า (select2)
+        let productOptions = productList.map(
+          (item) => `<option value="${item.job_code}"${data.job_code === item.job_code ? " selected" : ""}>${item.job_name}</option>`
+        ).join("");
+        // ถ้าเป็น job_code พิเศษ (temp-xxx) และไม่มีใน productList ให้เพิ่ม option
+        if (data.job_code && !productList.some(item => item.job_code === data.job_code)) {
+          productOptions += `<option value="${data.job_code}" selected>${data.job_name || data.job_code}</option>`;
+        }
+
+        // dropdown ผู้ปฏิบัติงาน (select2)
+        let userOptions = userList.map(
+          (u) => `<option value="${u.id}">${u.name}</option>`
+        ).join("");
+
+        // เตรียม operator id สำหรับแต่ละช่อง (ไม่ให้ซ้ำ)
+        const ops = data.operators || [];
+        const op1 = ops[0] || "";
+        const op2 = ops[1] || "";
+        const op3 = ops[2] || "";
+        const op4 = ops[3] || "";
+
+        row.innerHTML = `
+        <input type="hidden" name="work_plan_id[]" value="${data.id || ""}" />
+        <input type="hidden" name="job_name[]" class="job-name-hidden" value="${data.job_name || ''}" />
+        <td class="job-number"></td>
+        <td>
+          <select name="job_code[]" class="form-select job-name-dropdown" style="width: 100%">
+            <option value=""></option>
+            ${productOptions}
+          </select>
+        </td>
+        <td><select name="operator1[]" class="form-select operator-dropdown" style="width: 100%"><option value=""></option>${userOptions}</select></td>
+        <td><select name="operator2[]" class="form-select operator-dropdown" style="width: 100%"><option value=""></option>${userOptions}</select></td>
+        <td><select name="operator3[]" class="form-select operator-dropdown" style="width: 100%"><option value=""></option>${userOptions}</select></td>
+        <td><select name="operator4[]" class="form-select operator-dropdown" style="width: 100%"><option value=""></option>${userOptions}</select></td>
+        <td><input type="text" name="start_time[]" class="form-control time-input" placeholder="HH:MM" value="${
+          data.start_time || ""
+        }" /></td>
+        <td><input type="text" name="end_time[]" class="form-control time-input" placeholder="HH:MM" value="${
+          data.end_time || ""
+        }" /></td>
+        <td><button type="button" class="btn btn-outline-danger btn-sm" onclick="removeJob(this)">✖</button></td>
+      `;
+
+        document.getElementById("jobList").appendChild(row);
+        updateJobNumbers();
+
+        // set ค่า operator1-4 ให้ตรงกับตำแหน่ง ไม่ให้แสดงชื่อซ้ำทุกช่อง
+        row.querySelectorAll('.operator-dropdown')[0].value = op1;
+        row.querySelectorAll('.operator-dropdown')[1].value = op2;
+        row.querySelectorAll('.operator-dropdown')[2].value = op3;
+        row.querySelectorAll('.operator-dropdown')[3].value = op4;
+
+        // select2 สำหรับชื่อสินค้า (tags: true)
+        $(row.querySelector(".job-name-dropdown")).select2({
+          placeholder: "-- เลือกสินค้า --",
+          allowClear: true,
+          tags: true,
+          width: '100%',
+        });
+        // select2 สำหรับผู้ปฏิบัติงาน
+        $(row.querySelectorAll(".operator-dropdown")).select2({
+          placeholder: "-- เลือกผู้ปฏิบัติงาน --",
+          allowClear: true,
+          width: '100%'
+        });
+      }
+
+      function removeJob(btn) {
+        btn.closest("tr").remove();
+        updateJobNumbers();
+      }
+
+      function updateJobNumbers() {
+        document.querySelectorAll(".job-number").forEach((td, i) => {
+          td.textContent = i + 1;
+        });
+      }
+
+      async function fetchExistingPlans(date) {
+        const res = await fetch(`data/get_existing_plans.php?date=${date}`);
+        const json = await res.json();
+        const wrapper = document.getElementById("jobList");
+        wrapper.innerHTML = "";
+
+        if (!json.data || json.data.length === 0) {
+          addJob();
+          document.getElementById("existingPlans").innerHTML = `<div class="alert alert-info">ยังไม่มีแผนผลิต</div>`;
+          return;
+        }
+
+        document.getElementById("existingPlans").innerHTML = "";
+        // แสดงแผนงานแต่ละรายการ
+        json.data.forEach((plan) => {
+          // เตรียมข้อมูล operators เป็น array ของ user id
+          const operatorIds = (plan.operators || []).map(op => op.id);
+          addJob({
+            id: plan.id,
+            job_code: plan.job_code,
+            job_name: plan.job_name,
+            start_time: plan.start_time,
+            end_time: plan.end_time,
+            operators: operatorIds
+          });
+        });
+      }
+
+      // เพิ่ม logic ฝั่ง submit สำหรับสร้าง job_code ชั่วคราว
+      document.querySelector('form').addEventListener('submit', function(e) {
+        const selects = document.querySelectorAll('.job-name-dropdown');
+        let tempCount = 1;
+        selects.forEach((sel, idx) => {
+          const val = sel.value;
+          const hiddenInput = sel.closest('tr').querySelector('.job-name-hidden');
+          // ถ้าไม่เจอใน options เดิม (ถือว่าเป็นชื่อใหม่)
+          if (!productList.some(item => item.job_code === val)) {
+            const tempCode = `temp-${String(tempCount).padStart(3,'0')}`;
+            if (!sel.querySelector(`option[value="${tempCode}"]`)) {
+              const opt = document.createElement('option');
+              opt.value = tempCode;
+              opt.textContent = val;
+              opt.selected = true;
+              opt.dataset.new = '1';
+              opt.style.color = 'orange';
+              sel.appendChild(opt);
+            }
+            sel.value = tempCode;
+            if (hiddenInput) hiddenInput.value = val;
+            tempCount++;
+          } else {
+            // ถ้าเป็นชื่อปกติ ให้ set hidden เป็นชื่อจาก options
+            if (hiddenInput) {
+              const opt = sel.querySelector(`option[value="${val}"]`);
+              hiddenInput.value = opt ? opt.textContent : val;
+            }
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

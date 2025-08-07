@@ -1,0 +1,21 @@
+services:
+  tracker-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=192.168.0.94
+      - DB_USER=jitdhana
+      - DB_PASSWORD=iT12345$
+      - DB_NAME=esp_tracker
+    volumes:
+      - .:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+networks:
+  tracker-network:
+    driver: bridge 

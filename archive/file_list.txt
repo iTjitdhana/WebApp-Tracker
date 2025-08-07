@@ -1,0 +1,53 @@
+ESP Tracker Web v2.2 - File List
+
+Main Files:
+- index.html (หน้าจัดการขั้นตอนการผลิต - หน้าหลัก)
+- indextracker.html (หน้าจับเวลาการผลิต)
+- workplan.html (หน้าจัดการแผนงาน)
+- dashboard.html (หน้าแดชบอร์ด)
+- logs.html (หน้าดูประวัติ logs)
+- database_schema.sql (โครงสร้างฐานข้อมูล)
+- README.md (คู่มือการติดตั้ง)
+
+Data Files (PHP APIs):
+- data/get_process_by_job_code.php (ค้นหา process ตาม job_code)
+- data/save_process.php (บันทึกข้อมูล process)
+- data/confirm_overwrite.php (ยืนยันการเขียนทับ)
+- data/get_production_jobs.php (ดึงงานการผลิต)
+- data/get_process_steps.php (ดึงขั้นตอนการผลิต)
+- data/get_process_logs.php (ดึงประวัติการจับเวลา)
+- data/save_production_log.php (บันทึกการจับเวลา)
+- data/get_users.php (ดึงข้อมูลผู้ใช้)
+- data/get_products.php (ดึงข้อมูลสินค้า)
+- data/get_workplans.php (ดึงแผนงาน)
+- data/save_workplan.php (บันทึกแผนงาน)
+- data/get_existing_plans.php (ดึงแผนงานที่มีอยู่)
+- data/dashboard.php (API แดชบอร์ด)
+- data/export_logs_csv.php (export logs เป็น CSV)
+- data/update_log.php (อัปเดต log)
+- data/get_data.php (ดึงข้อมูลทั่วไป)
+- data/save.php (บันทึกข้อมูลทั่วไป)
+- data/get_jobname.php (ดึงชื่องาน)
+- data/get_plan.php (ดึงแผน)
+- data/save_plan.php (บันทึกแผน)
+- data/get_existing_process.php (ดึง process ที่มีอยู่)
+- data/get_process_from_workplan.php (ดึง process จากแผนงาน)
+- data/savedemo.php (บันทึก demo)
+- data/log.txt (ไฟล์ log)
+- data/debug.log (ไฟล์ debug)
+
+Config Files:
+- includes/config_workplanDB.php (config ฐานข้อมูลหลัก)
+- includes/config_logsDB.php (config ฐานข้อมูล logs)
+- includes/config_form_process.php (config ฐานข้อมูล process)
+- includes/config_uesrsDB.php (config ฐานข้อมูลผู้ใช้)
+
+CSS Files:
+- assets/indexstyledemo.css
+- assets/dashboardstyle.css
+- assets/workplanstyle.css
+- assets/form_process_style.css
+- assets/indexstyle.css
+
+Total Files: ~40 files
+Estimated Size: ~45KB 

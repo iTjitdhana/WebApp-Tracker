@@ -1,0 +1,29 @@
+ESP Tracker Web v2.2 - ZIP Creation Instructions
+================================================
+
+เนื่องจากไม่สามารถสร้างไฟล์ ZIP อัตโนมัติได้ กรุณาทำตามขั้นตอนนี้:
+
+1. เปิด File Explorer
+2. ไปที่โฟลเดอร์: C:\xampp\htdocs\esp-tracker-web\esp-tracker-release
+3. เลือกไฟล์และโฟลเดอร์ทั้งหมดในโฟลเดอร์ esp-tracker-release
+4. คลิกขวา → Send to → Compressed (zipped) folder
+5. เปลี่ยนชื่อไฟล์ ZIP เป็น: esp-tracker-web-v2.2.zip
+
+หรือใช้โปรแกรม ZIP อื่นๆ:
+- WinRAR
+- 7-Zip
+- WinZip
+
+ไฟล์ที่ต้องมีใน ZIP:
+- index.html (หน้าหลัก)
+- indextracker.html (หน้าจับเวลา)
+- workplan.html (หน้าจัดการแผนงาน)
+- dashboard.html (หน้าแดชบอร์ด)
+- logs.html (หน้าประวัติ)
+- database_schema.sql
+- README.md
+- โฟลเดอร์ data/ (ไฟล์ PHP ทั้งหมด)
+- โฟลเดอร์ includes/ (ไฟล์ config)
+- โฟลเดอร์ assets/ (ไฟล์ CSS)
+
+ขนาดไฟล์ประมาณ: 45KB 

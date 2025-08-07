@@ -1,0 +1,18 @@
+services:
+  tracker:
+    build:
+      context: .
+      dockerfile: Dockerfile.simple
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=192.168.0.93
+      - DB_USER=it.jitdhana
+      - DB_PASSWORD=iT12345$
+      - DB_NAME=esp_tracker
+    restart: unless-stopped
+
+networks:
+  tracker-network:
+    driver: bridge 

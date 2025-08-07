@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>Food Production Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="frontend/assets/indexstyledemo.css" />
+  <style>
+    .list-group-item.active,
+    .process-item.active,
+    .list-group-item.active:focus,
+    .list-group-item.active:active {
+      background-color: #28a745 !important;
+      color: #fff !important;
+      border-color: #28a745 !important;
+    }
+    .list-group-item.active span,
+    .list-group-item.active .badge,
+    .process-item.active span,
+    .process-item.active .badge {
+      color: #fff !important;
+    }
+    
+    /* สถานะสำหรับงานพิเศษ */
+    .list-group-item.completed {
+      background-color: #e8f5e8 !important;
+      border-color: #28a745 !important;
+    }
+    
+    .list-group-item.completed .text-success,
+    .list-group-item.completed .text-danger,
+    .list-group-item.completed .text-primary {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1 class="h4 fw-bold text-dark mb-0">ระบบจับเวลาการผลิต</h1>
+        <small class="text-muted">Food Production Timer</small>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <!-- Date Picker -->
+        <input type="text" id="date-filter" class="form-control form-control-sm" style="width: 150px;" />
+        <div class="dropdown">
+          <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">☰ เมนู</button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="logs.html">📋 Log ประวัติ</a></li>
+            <li><a class="dropdown-item" href="dashboard.html">📊 Dashboard</a></li>
+            <li><a class="dropdown-item" href="workplan.html">📜 แผนงานผลิต</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <!-- LEFT: Time + Controls -->
+      <div class="col-lg-7">
+        <div class="card shadow-sm h-100">
+          <div class="card-header text-center">
+            <h5 class="mb-0">ขั้นตอนการผลิต</h5>
+            <span id="current-process-name" class="badge rounded-pill bg-light text-dark border ms-2">–</span>
+          </div>
+          <div class="card-body d-flex flex-column justify-content-center">
+            <div class="d-flex justify-content-center align-items-center gap-4 mb-4">
+              <button id="arrow-left" class="btn btn-secondary btn-lg" onclick="changeNumber(-1)">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+              <div class="text-center">
+                <div id="num-display" class="display-1 bg-dark text-white rounded px-5 py-3">01</div>
+                <p class="text-muted mt-2 mb-0">ขั้นตอนที่</p>
+              </div>
+              <button id="arrow-right" class="btn btn-secondary btn-lg" onclick="changeNumber(1)">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </div>
+            <div class="row g-3 mb-4">
+              <div class="col-4">
+                <div class="time-card bg-start text-success">
+                  <small class="text-muted">เวลาเริ่ม</small>
+                  <div id="start-time" class="fw-bold lh-1">–</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="time-card bg-end text-danger">
+                  <small class="text-muted">เวลาสิ้นสุด</small>
+                  <div id="stop-time" class="fw-bold lh-1">–</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="time-card bg-used text-primary">
+                  <small class="text-muted">เวลาที่ใช้</small>
+                  <div id="used-time" class="fw-bold lh-1">–</div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex gap-3 justify-content-center mb-3">
+              <button onclick="sendToLocal(true)" id="start-btn" class="btn btn-lg px-4 btn-start">
+                <i class="bi bi-play-fill me-1"></i> เริ่มงาน
+              </button>
+              <button onclick="sendToLocal(false)" id="stop-btn" class="btn btn-lg px-4 btn-stop">
+                <i class="bi bi-stop-fill me-1"></i> หยุดงาน
+              </button>
+              <button onclick="finishAllProcess()" id="finish-btn" class="btn btn-lg px-4 btn-secondary">
+                <i class="bi bi-check-circle me-1"></i> กดเมื่อผลิตเสร็จ
+              </button>
+            </div>
+            <!-- ปุ่มเพิ่มขั้นตอนสำหรับงานพิเศษ -->
+            <div id="add-step-section" class="text-center mb-3" style="display: none;">
+              <button onclick="addNewStep()" class="btn btn-outline-success btn-sm">
+                <i class="bi bi-plus-circle me-1"></i> เพิ่มขั้นตอนใหม่
+              </button>
+            </div>
+            <div class="text-center">
+              <div id="status-log" class="status-log bg-light">ยังไม่ส่งข้อมูล</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- RIGHT: Dropdown + Process List -->
+      <div class="col-lg-5">
+        <div class="card mb-4 shadow-sm">
+          <div class="card-header">งานที่ผลิต</div>
+          <div class="card-body">
+            <select class="form-select" id="device-select" onchange="updateFromDropdown()">
+              <option value="">-- เลือก --</option>
+            </select>
+          </div>
+        </div>
+        <div class="card shadow-sm">
+          <div class="card-header d-flex align-items-center gap-2">
+            <i class="bi bi-clock"></i><span>รายการขั้นตอนการผลิต</span>
+          </div>
+          <div class="card-body p-0">
+            <div id="process-list" class="list-group list-group-flush process-scroll"></div>
+            <div class="text-end mt-3 pe-3">
+              เวลารวมของงาน: <span id="total-job-time">–</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/th.js"></script>
+  <script>
+    // State
+    let workplans = [];
+    let processSteps = [];
+    let processLogs = [];
+    let selectedWorkplan = null;
+    let selectedProcessIndex = 0;
+    let selectedDate = new Date().toISOString().slice(0, 10);
+    let timerInterval = null;
+    let finished = false;
+
+    // Date picker
+    flatpickr("#date-filter", {
+      dateFormat: "Y-m-d",
+      altInput: true,
+      altFormat: "d/m/Y",
+      locale: "th",
+      defaultDate: new Date(),
+      onReady: function(selectedDates, dateStr, instance) {
+        if (!instance.input.value) {
+          instance.input.value = dateStr;
+        }
+      },
+      onChange: function(selectedDates, dateStr) {
+        selectedDate = dateStr;
+        fetchWorkplans(selectedDate).then(resetUI);
+      }
+    });
+
+    // Fetch workplans by date
+    async function fetchWorkplans(date) {
+      const res = await fetch('backend/data/get_production_jobs.php?date=' + encodeURIComponent(date));
+      const json = await res.json();
+      workplans = Array.isArray(json.data) ? json.data : [];
+      const select = document.getElementById('device-select');
+      select.innerHTML = '<option value="">-- เลือก --</option>';
+      if (workplans.length === 0) {
+        select.innerHTML += '<option value="" disabled>ไม่พบงานในวันนี้</option>';
+      }
+      workplans.forEach(wp => {
+        select.innerHTML += `<option value="${wp.id}">งานที่ ${wp.job_number}: ${wp.job_name}</option>`;
+      });
+    }
+
+    // Fetch process steps
+    async function fetchProcessSteps(job_code) {
+      // ถ้าเป็นงานพิเศษ (รหัสชั่วคราว) ให้สร้าง process steps แบบไดนามิก
+      if (job_code && job_code.startsWith('temp-')) {
+        // สร้าง process steps แบบพื้นฐานสำหรับงานพิเศษ
+        processSteps = [
+          { process_number: 1, process_description: 'ขั้นตอนที่ 1' },
+          { process_number: 2, process_description: 'ขั้นตอนที่ 2' },
+          { process_number: 3, process_description: 'ขั้นตอนที่ 3' },
+          { process_number: 4, process_description: 'ขั้นตอนที่ 4' },
+          { process_number: 5, process_description: 'ขั้นตอนที่ 5' }
+        ];
+        return;
+      }
+      
+      const res = await fetch('backend/data/get_process_steps.php?job_code=' + encodeURIComponent(job_code));
+      const json = await res.json();
+      processSteps = json.data && json.data.length > 0 ? json.data : [];
+    }
+
+    // Fetch process logs
+    async function fetchProcessLogs(work_plan_id) {
+      const res = await fetch('backend/data/get_process_logs.php?work_plan_id=' + encodeURIComponent(work_plan_id));
+      const json = await res.json();
+      processLogs = json.data || [];
+    }
+
+    // Render process list
+    function renderProcessList() {
+      const list = document.getElementById('process-list');
+      list.innerHTML = '';
+      
+      // ถ้าเป็นงานพิเศษ ให้แสดงเฉพาะขั้นตอนที่มีการเริ่มจับเวลาแล้ว
+      let stepsToShow = processSteps;
+      if (selectedWorkplan && selectedWorkplan.job_code && selectedWorkplan.job_code.startsWith('temp-')) {
+        // หาขั้นตอนที่มีการเริ่มจับเวลาแล้ว
+        const startedSteps = processLogs
+          .filter(log => log.start_time)
+          .map(log => log.process_number);
+        
+        // ถ้ายังไม่มีขั้นตอนใดเริ่ม ให้แสดงขั้นตอนแรก
+        if (startedSteps.length === 0) {
+          stepsToShow = [processSteps[0]];
+        } else {
+          // แสดงเฉพาะขั้นตอนที่มีการเริ่มแล้ว
+          stepsToShow = processSteps.filter(step => 
+            startedSteps.includes(step.process_number)
+          );
+        }
+      }
+      
+      stepsToShow.forEach((step, idx) => {
+        const log = processLogs.find(l => l.process_number == step.process_number) || {};
+        let start = log.start_time ? new Date(log.start_time) : null;
+        let stop = log.stop_time ? new Date(log.stop_time) : null;
+        let used = log.used_time != null ? log.used_time : null;
+        let usedText = used != null ? formatUsedTime(used) : '–';
+        let startText = start ? start.toLocaleTimeString('th-TH') : '–';
+        let stopText = stop ? stop.toLocaleTimeString('th-TH') : '–';
+        
+        // สำหรับงานพิเศษ ให้แสดงสถานะที่ชัดเจน
+        let statusClass = '';
+        if (start && !stop) {
+          statusClass = 'active';
+        } else if (start && stop) {
+          statusClass = 'completed';
+        }
+        
+        list.innerHTML += `<div class="list-group-item${statusClass ? ' ' + statusClass : ''}" onclick="selectProcess(${processSteps.indexOf(step)})">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>${step.process_number}. ${step.process_description}</div>
+            <div class="small text-end">
+              <div>เริ่ม: <span class="text-success">${startText}</span></div>
+              <div>สิ้นสุด: <span class="text-danger">${stopText}</span></div>
+              <div>ใช้เวลา: <span class="text-primary">${usedText}</span></div>
+            </div>
+          </div>
+        </div>`;
+      });
+      
+      // อัปเดตการแสดงผลขั้นตอนปัจจุบัน
+      const currentStep = processSteps[selectedProcessIndex];
+      if (currentStep) {
+        document.getElementById('current-process-name').textContent = currentStep.process_description || '–';
+        document.getElementById('num-display').textContent = (selectedProcessIndex + 1).toString().padStart(2, '0');
+      } else {
+        document.getElementById('current-process-name').textContent = '–';
+        document.getElementById('num-display').textContent = '01';
+      }
+      
+      updateTimeBoxes();
+      renderTotalJobTime();
+      
+      // แสดงปุ่มเพิ่มขั้นตอนสำหรับงานพิเศษ
+      const addStepSection = document.getElementById('add-step-section');
+      if (selectedWorkplan && selectedWorkplan.job_code && selectedWorkplan.job_code.startsWith('temp-')) {
+        addStepSection.style.display = 'block';
+      } else {
+        addStepSection.style.display = 'none';
+      }
+    }
+    
+    // ฟังก์ชันเพิ่มขั้นตอนใหม่สำหรับงานพิเศษ
+    function addNewStep() {
+      if (!selectedWorkplan || !selectedWorkplan.job_code.startsWith('temp-')) return;
+      
+      const nextStepNumber = Math.max(...processSteps.map(s => s.process_number)) + 1;
+      if (nextStepNumber <= 10) { // จำกัดไม่เกิน 10 ขั้นตอน
+        processSteps.push({
+          process_number: nextStepNumber,
+          process_description: `ขั้นตอนที่ ${nextStepNumber}`
+        });
+        selectedProcessIndex = processSteps.length - 1; // เลือกขั้นตอนใหม่
+        renderProcessList();
+      }
+    }
+
+    function formatUsedTime(sec) {
+      if (sec == null) return '–';
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+      return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+
+    function selectProcess(idx) {
+      selectedProcessIndex = idx;
+      renderProcessList();
+    }
+
+    function updateFromDropdown() {
+      const select = document.getElementById('device-select');
+      const id = select.value;
+      selectedWorkplan = workplans.find(wp => wp.id == id);
+      selectedProcessIndex = 0;
+      processSteps = []; // รีเซ็ต process steps
+      processLogs = []; // รีเซ็ต process logs
+      
+      if (selectedWorkplan) {
+        const dateText = formatDateForDisplay(selectedWorkplan.production_date);
+        document.querySelector('.card-header h5').textContent = `งานที่ผลิต: ${selectedWorkplan.job_name} (${dateText})`;
+        fetchProcessSteps(selectedWorkplan.job_code).then(() => {
+          fetchProcessLogs(selectedWorkplan.id).then(renderProcessList);
+        });
+        updateFinishButtonState();
+      } else {
+        document.querySelector('.card-header h5').textContent = 'ขั้นตอนการผลิต';
+        document.getElementById('process-list').innerHTML = '';
+        document.getElementById('current-process-name').textContent = '–';
+        document.getElementById('num-display').textContent = '01';
+        document.getElementById('start-time').textContent = '–';
+        document.getElementById('stop-time').textContent = '–';
+        document.getElementById('used-time').textContent = '–';
+        // reset ปุ่ม finish
+        finished = false;
+        updateFinishButtonState();
+      }
+    }
+
+    function updateTimeBoxes() {
+      const step = processSteps[selectedProcessIndex];
+      if (!step) {
+        document.getElementById('start-time').textContent = '–';
+        document.getElementById('stop-time').textContent = '–';
+        document.getElementById('used-time').textContent = '–';
+        if (timerInterval) clearInterval(timerInterval);
+        return;
+      }
+      
+      const log = processLogs.find(l => l.process_number == step.process_number) || {};
+      let start = log.start_time ? new Date(log.start_time) : null;
+      let stop = log.stop_time ? new Date(log.stop_time) : null;
+      let used = log.used_time != null ? log.used_time : null;
+      document.getElementById('start-time').textContent = start ? start.toLocaleTimeString('th-TH') : '–';
+      document.getElementById('stop-time').textContent = stop ? stop.toLocaleTimeString('th-TH') : '–';
+      document.getElementById('used-time').textContent = used != null ? formatUsedTime(used) : '–';
+      if (start && !stop) {
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+          const now = new Date();
+          const sec = Math.floor((now - start) / 1000);
+          document.getElementById('used-time').textContent = formatUsedTime(sec);
+        }, 1000);
+      } else {
+        if (timerInterval) clearInterval(timerInterval);
+      }
+    }
+
+    function getBangkokTimestamp() {
+      const now = new Date();
+      const options = {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false, timeZone: 'Asia/Bangkok'
+      };
+      const parts = new Intl.DateTimeFormat('sv-SE', options).formatToParts(now);
+      const y = parts.find(p => p.type === 'year').value;
+      const m = parts.find(p => p.type === 'month').value;
+      const d = parts.find(p => p.type === 'day').value;
+      const h = parts.find(p => p.type === 'hour').value;
+      const min = parts.find(p => p.type === 'minute').value;
+      const s = parts.find(p => p.type === 'second').value;
+      return `${y}-${m}-${d} ${h}:${min}:${s}`;
+    }
+
+    async function sendToLocal(isStart) {
+      if (!selectedWorkplan) return;
+      const step = processSteps[selectedProcessIndex];
+      const status = isStart ? 'start' : 'stop';
+      const timestamp = getBangkokTimestamp();
+      
+      // สำหรับงานพิเศษ ถ้าเป็นการเริ่มขั้นตอนใหม่ ให้เพิ่มขั้นตอนถัดไป
+      if (isStart && selectedWorkplan.job_code && selectedWorkplan.job_code.startsWith('temp-')) {
+        const currentLog = processLogs.find(l => l.process_number === step.process_number);
+        if (!currentLog || !currentLog.start_time) {
+          // ถ้ายังไม่เคยเริ่มขั้นตอนนี้ ให้เพิ่มขั้นตอนถัดไปในรายการ
+          const nextStepNumber = Math.max(...processSteps.map(s => s.process_number)) + 1;
+          if (nextStepNumber <= 10) { // จำกัดไม่เกิน 10 ขั้นตอน
+            processSteps.push({
+              process_number: nextStepNumber,
+              process_description: `ขั้นตอนที่ ${nextStepNumber}`
+            });
+          }
+        }
+      }
+      
+      await fetch('backend/data/save_production_log.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `work_plan_id=${encodeURIComponent(selectedWorkplan.id)}&process_number=${encodeURIComponent(step.process_number)}&status=${status}&timestamp=${encodeURIComponent(timestamp)}`
+      });
+      await fetchProcessLogs(selectedWorkplan.id);
+      renderProcessList();
+    }
+
+    function changeNumber(step) {
+      selectedProcessIndex += step;
+      if (selectedProcessIndex < 0) selectedProcessIndex = 0;
+      if (selectedProcessIndex >= processSteps.length) selectedProcessIndex = processSteps.length - 1;
+      renderProcessList();
+    }
+    
+    // ฟังก์ชันเลือกขั้นตอน (ปรับปรุง)
+    function selectProcess(idx) {
+      selectedProcessIndex = idx;
+      renderProcessList();
+    }
+
+    function formatDateForDisplay(isoDate) {
+      if (!isoDate) return '';
+      if (typeof isoDate !== 'string') {
+        const d = new Date(isoDate);
+        isoDate = d.toISOString().slice(0, 10);
+      }
+      const [y, m, d] = isoDate.split('-');
+      return `${d}/${m}/${y}`;
+    }
+
+    function resetUI() {
+      document.getElementById('device-select').value = '';
+      selectedWorkplan = null;
+      selectedProcessIndex = 0;
+      processSteps = [];
+      processLogs = [];
+      document.querySelector('.card-header h5').textContent = 'ขั้นตอนการผลิต';
+      document.getElementById('process-list').innerHTML = '';
+      document.getElementById('current-process-name').textContent = '–';
+      document.getElementById('num-display').textContent = '01';
+      document.getElementById('start-time').textContent = '–';
+      document.getElementById('stop-time').textContent = '–';
+      document.getElementById('used-time').textContent = '–';
+    }
+
+    function renderTotalJobTime() {
+      // หา process ที่มี start/stop
+      const starts = processLogs.map(l => l.start_time).filter(Boolean).map(t => new Date(t));
+      const stops = processLogs.map(l => l.stop_time).filter(Boolean).map(t => new Date(t));
+      if (starts.length === 0 || stops.length === 0) {
+        document.getElementById('total-job-time').textContent = '–';
+        return;
+      }
+      const minStart = new Date(Math.min(...starts));
+      const maxStop = new Date(Math.max(...stops));
+      const sec = Math.floor((maxStop - minStart) / 1000);
+      document.getElementById('total-job-time').textContent = formatUsedTime(sec);
+    }
+
+    // ฟังก์ชัน finishAllProcess สำหรับปุ่ม "ผลิตเสร็จแล้ว"
+    async function finishAllProcess() {
+      if (!selectedWorkplan) return;
+      let updated = false;
+      for (const step of processSteps) {
+        const log = processLogs.find(l => l.process_number == step.process_number);
+        if (!log || !log.stop_time) {
+          const timestamp = getBangkokTimestamp();
+          await fetch('backend/data/save_production_log.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `work_plan_id=${encodeURIComponent(selectedWorkplan.id)}&process_number=${encodeURIComponent(step.process_number)}&status=stop&timestamp=${encodeURIComponent(timestamp)}`
+          });
+          updated = true;
+        }
+      }
+      if (updated) {
+        await fetchProcessLogs(selectedWorkplan.id);
+        renderProcessList();
+      }
+      finished = !finished;
+      await fetch('backend/data/update_finished_flag.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `work_plan_id=${encodeURIComponent(selectedWorkplan.id)}&is_finished=${finished ? 1 : 0}`
+      });
+      updateFinishButtonState();
+    }
+
+    // ฟังก์ชัน sync ปุ่มกับสถานะจริงในฐานข้อมูล
+    async function updateFinishButtonState() {
+      if (!selectedWorkplan) return;
+      const res = await fetch('backend/data/get_finished_flag.php?work_plan_id=' + encodeURIComponent(selectedWorkplan.id));
+      const json = await res.json();
+      finished = (json.is_finished === 1 || json.is_finished === '1');
+      const btn = document.getElementById('finish-btn');
+      if (finished) {
+        btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> ผลิตเสร็จแล้ว';
+      } else {
+        btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> กดเมื่อผลิตเสร็จ';
+      }
+    }
+
+    // Initial load
+    document.addEventListener('DOMContentLoaded', function() {
+      const dateInput = document.getElementById('date-filter');
+      if (dateInput && dateInput.value) {
+        selectedDate = dateInput.value;
+      }
+      fetchWorkplans(selectedDate);
+    });
+  </script>
+</body>
+</html> 

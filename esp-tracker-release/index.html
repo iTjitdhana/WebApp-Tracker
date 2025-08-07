@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Form Process</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/form_process_style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  </head>
+  <body class="bg-light">
+    <div class="container py-5">
+      <div class="card shadow-lg mb-4">
+        <div class="card-body">
+          <h4 class="card-title mb-3">📌 ข้อมูลขั้นตอนการผลิต</h4>
+          <form
+            id="processForm"
+            method="POST"
+            action="data/save_process.php"
+            onsubmit="submitForm(event)"
+          >
+            <div class="p-3 border rounded bg-green-light mb-4">
+              <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                  <label for="job_code" class="form-label">รหัสสินค้า</label>
+                  <div class="input-group">
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="job_code"
+                      name="job_code"
+                      required
+                    />
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      onclick="checkJobExists()"
+                    >
+                      🔍
+                    </button>
+                  </div>
+                </div>
+                <div class="col-md-5">
+                  <label for="job_name" class="form-label">ชื่อสินค้า</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="job_name"
+                    name="job_name"
+                    required
+                  />
+                </div>
+                <div class="col-md-3">
+                  <label for="worker_count" class="form-label"
+                    >จำนวนผู้ปฏิบัติงาน</label
+                  >
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="worker_count"
+                    name="worker_count"
+                    min="0"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="card bg-white shadow-sm p-3" id="steps-section">
+              <h5 class="mb-3">🧪 กระบวนการที่</h5>
+              <div id="steps" class="step-sortable">
+                <div class="step-item d-flex align-items-center mb-2">
+                  <div class="step-number" data-step="1">1</div>
+                  <input
+                    type="text"
+                    class="form-control step-input placeholder-text"
+                    name="steps[]"
+                    value="เตรียมอุปกรณ์และวัตถุดิบ"
+                    readonly
+                  />
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-danger ms-2 delete-btn d-none"
+                    onclick="removeStep(this)"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+              <button
+                type="button"
+                class="btn btn-outline-success mt-2"
+                onclick="addStep()"
+              >
+                ➕ เพิ่มกระบวนการ
+              </button>
+            </div>
+
+            <div class="text-end mt-4">
+              <button type="submit" class="btn btn-primary">💾 บันทึก</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let stepCount = 1;
+      let firstStepEdited = false;
+
+      function escapeHTML(str) {
+        return str.replace(/[&<>'"]/g, function (tag) {
+          const chars = {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            "'": "&#39;",
+            '"': "&quot;",
+          };
+          return chars[tag] || tag;
+        });
+      }
+
+      function checkJobExists() {
+        const jobCode = document.getElementById("job_code").value.trim();
+        if (!jobCode) {
+          alert("กรุณากรอกรหัสสินค้า");
+          return;
+        }
+        
+        // แสดงสถานะการค้นหา
+        const searchBtn = document.querySelector('button[onclick="checkJobExists()"]');
+        const originalText = searchBtn.innerHTML;
+        searchBtn.innerHTML = "🔍 กำลังค้นหา...";
+        searchBtn.disabled = true;
+
+        fetch(
+          `data/get_process_by_job_code.php?job_code=${encodeURIComponent(
+            jobCode
+          )}`
+        )
+          .then((response) => response.json())
+          .then((data) => {
+            const stepsDiv = document.getElementById("steps");
+            stepsDiv.innerHTML = "";
+            stepCount = 0;
+
+            if (data.status === "found" && data.data.length > 0) {
+              // มีข้อมูลอยู่แล้ว
+              document.getElementById("job_name").value = data.job_name || "";
+              document.getElementById("worker_count").value = data.worker_count || "";
+
+              data.data.forEach((step) => {
+                stepCount++;
+                const div = document.createElement("div");
+                div.className = "step-item d-flex align-items-center mb-2";
+                div.innerHTML = `
+            <div class="step-number">${stepCount}</div>
+            <input type="text" class="form-control step-input" name="steps[]" value="${escapeHTML(step.process_description)}" required>
+            <button type="button" class="btn btn-sm btn-outline-danger ms-2 delete-btn" onclick="removeStep(this)">✕</button>
+          `;
+                stepsDiv.appendChild(div);
+              });
+
+              firstStepEdited = true;
+              console.log("พบข้อมูล:", data.data.length, "ขั้นตอน");
+            } else if (data.status === "not_found") {
+              // ไม่มีข้อมูล ให้เคลียร์ฟอร์ม และแสดงขั้นตอนใหม่ 1 อันแบบจาง ๆ
+              document.getElementById("job_name").value = "";
+              document.getElementById("worker_count").value = "";
+              firstStepEdited = false;
+              addPlaceholderStep();
+              console.log("ไม่พบข้อมูลสำหรับรหัส:", jobCode);
+            } else {
+              // กรณี error
+              console.error("Error:", data.message);
+              addPlaceholderStep();
+            }
+          })
+          .catch((err) => {
+            console.error("Fetch error:", err);
+            alert("เกิดข้อผิดพลาดในการค้นหา: " + err.message);
+            addPlaceholderStep();
+          })
+          .finally(() => {
+            // คืนค่าปุ่มกลับเป็นปกติ
+            const searchBtn = document.querySelector('button[onclick="checkJobExists()"]');
+            searchBtn.innerHTML = "🔍";
+            searchBtn.disabled = false;
+          });
+      }
+      function addPlaceholderStep() {
+        const stepsDiv = document.getElementById("steps");
+        stepsDiv.innerHTML = ""; // เคลียร์ของเก่า
+
+        const div = document.createElement("div");
+        div.className = "step-item d-flex align-items-center mb-2";
+        div.innerHTML = `
+    <div class="step-number" data-step="1">1</div>
+    <input type="text" class="form-control step-input placeholder-text" name="steps[]" value="เตรียมอุปกรณ์และวัตถุดิบ" readonly>
+    <button type="button" class="btn btn-sm btn-outline-danger ms-2 delete-btn d-none" onclick="removeStep(this)">✕</button>
+  `;
+        stepsDiv.appendChild(div);
+        stepCount = 1;
+        firstStepEdited = false;
+      }
+
+      function addStep() {
+        const stepsDiv = document.getElementById("steps");
+        const inputs = stepsDiv.getElementsByClassName("step-input");
+
+        // ถ้ายังไม่ได้แก้ placeholder (ขั้นตอนแรกยังจาง) → เปลี่ยนเป็นของจริง
+        if (!firstStepEdited && inputs.length > 0) {
+          inputs[0].removeAttribute("readonly");
+          inputs[0].classList.remove("placeholder-text");
+          const deleteBtn = stepsDiv.querySelector(".delete-btn");
+          if (deleteBtn) deleteBtn.classList.remove("d-none");
+          firstStepEdited = true;
+          // 👇 ไม่ return แล้ว ให้ไปเพิ่มขั้นตอนต่อเลย
+        }
+
+        stepCount++;
+        const div = document.createElement("div");
+        div.className = "step-item d-flex align-items-center mb-2";
+        div.innerHTML = `
+    <div class="step-number">${stepCount}</div>
+    <input type="text" class="form-control step-input" name="steps[]">
+    <button type="button" class="btn btn-sm btn-outline-danger ms-2 delete-btn" onclick="removeStep(this)">✕</button>
+  `;
+        stepsDiv.appendChild(div);
+        updateStepNumbers();
+      }
+
+      function removeStep(button) {
+        const item = button.closest(".step-item");
+        item.remove();
+        updateStepNumbers();
+      }
+
+      function updateStepNumbers() {
+        const steps = document.querySelectorAll(".step-item .step-number");
+        steps.forEach((el, index) => {
+          const num = index + 1;
+          el.setAttribute("data-step", num); // ✅ แค่เซ็ต data-step
+          // ไม่ต้องใช้ el.textContent = num;
+        });
+        stepCount = steps.length;
+      }
+
+      function hideDeleteButtons() {
+        document
+          .querySelectorAll(".delete-btn")
+          .forEach((btn) => btn.classList.add("d-none"));
+
+        // 👇 ถ้าไม่ได้กรอกจำนวนผู้ปฏิบัติงาน ให้ใส่ 0 อัตโนมัติ
+        const workerInput = document.getElementById("worker_count");
+        if (!workerInput.value.trim()) {
+          workerInput.value = 0;
+        }
+      }
+
+      async function submitForm(event) {
+        event.preventDefault();
+        
+        // ซ่อนปุ่มลบและเตรียมข้อมูล
+        hideDeleteButtons();
+        
+        // แสดงสถานะการบันทึก
+        const submitBtn = document.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = "💾 กำลังบันทึก...";
+        submitBtn.disabled = true;
+        
+        try {
+          const formData = new FormData(event.target);
+          const response = await fetch('data/save_process.php', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const result = await response.json();
+          
+          if (result.status === 'success') {
+            alert(result.message);
+            window.location.href = result.redirect;
+          } else if (result.status === 'confirm_overwrite') {
+            if (confirm('พบข้อมูลที่มีอยู่แล้ว ต้องการเขียนทับหรือไม่?')) {
+              // ส่งข้อมูลใหม่พร้อม overwrite flag
+              formData.append('overwrite', 'yes');
+              const overwriteResponse = await fetch('data/save_process.php', {
+                method: 'POST',
+                body: formData
+              });
+              const overwriteResult = await overwriteResponse.json();
+              
+              if (overwriteResult.status === 'success') {
+                alert(overwriteResult.message);
+                window.location.href = overwriteResult.redirect;
+              } else {
+                alert('เกิดข้อผิดพลาด: ' + overwriteResult.message);
+              }
+            }
+          } else {
+            alert('เกิดข้อผิดพลาด: ' + result.message);
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          alert('เกิดข้อผิดพลาดในการส่งข้อมูล: ' + error.message);
+        } finally {
+          // คืนค่าปุ่มกลับเป็นปกติ
+          submitBtn.innerHTML = originalText;
+          submitBtn.disabled = false;
+        }
+      }
+
+      new Sortable(document.getElementById("steps"), {
+        animation: 150,
+        onEnd: updateStepNumbers,
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard การผลิต</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 p-4">
+
+  <!-- Header -->
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <h1 class="text-3xl font-bold">Dashboard การผลิต</h1>
+      <p class="text-lg text-gray-600">Production Status Overview</p>
+    </div>
+    <div class="text-right">
+      <div id="current-time" class="text-2xl font-bold"></div>
+      <div id="current-date" class="text-sm text-gray-600"></div>
+    </div>
+  </div>
+
+  <!-- Status Summary -->
+  <div class="grid grid-cols-4 gap-3 mb-6">
+    <div class="bg-green-500 text-white p-4 rounded-lg shadow">
+      <p class="text-sm">เสร็จสิ้น</p>
+      <p id="done-count" class="text-2xl font-bold">0</p>
+    </div>
+    <div class="bg-blue-500 text-white p-4 rounded-lg shadow">
+      <p class="text-sm">กำลังทำ</p>
+      <p id="doing-count" class="text-2xl font-bold">0</p>
+    </div>
+    <div class="bg-gray-500 text-white p-4 rounded-lg shadow">
+      <p class="text-sm">รอดำเนินการ</p>
+      <p id="pending-count" class="text-2xl font-bold">0</p>
+    </div>
+    <div class="bg-red-500 text-white p-4 rounded-lg shadow">
+      <p class="text-sm">ล่าช้า</p>
+      <p id="late-count" class="text-2xl font-bold">0</p>
+    </div>
+  </div>
+
+  <!-- Tables -->
+  <div class="grid grid-cols-2 gap-6 mb-6">
+    <div>
+      <h2 class="bg-gray-800 text-white px-4 py-2 rounded-t-lg font-bold">รายการงานผลิต (งานที่ 1–7)</h2>
+      <table class="w-full text-sm bg-white shadow">
+        <thead>
+          <tr class="bg-gray-200">
+            <th class="p-2">งาน</th>
+            <th class="p-2">รายละเอียด</th>
+            <th class="p-2">เวลา</th>
+            <th class="p-2">สถานะ</th>
+          </tr>
+        </thead>
+        <tbody id="left-table" class="divide-y divide-gray-100"></tbody>
+      </table>
+    </div>
+    <div>
+      <h2 class="bg-gray-800 text-white px-4 py-2 rounded-t-lg font-bold">รายการงานผลิต (งานที่ 8–14)</h2>
+      <table class="w-full text-sm bg-white shadow">
+        <thead>
+          <tr class="bg-gray-200">
+            <th class="p-2">งาน</th>
+            <th class="p-2">รายละเอียด</th>
+            <th class="p-2">เวลา</th>
+            <th class="p-2">สถานะ</th>
+          </tr>
+        </thead>
+        <tbody id="right-table" class="divide-y divide-gray-100"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Footer Summary -->
+  <div class="text-center">
+    <p class="text-xl text-gray-700">
+      รวมงานทั้งหมด:
+      <span id="total-count" class="font-bold text-gray-900">0</span> งาน |
+      เสร็จแล้ว:
+      <span id="done-count-footer" class="font-bold text-green-600">0</span> งาน |
+      คิดเป็น:
+      <span id="done-percent" class="font-bold text-blue-600">0%</span>
+    </p>
+  </div>
+
+  <script>
+    function updateClock() {
+      const now = new Date();
+      document.getElementById("current-time").textContent = now.toLocaleTimeString("th-TH");
+      document.getElementById("current-date").textContent = now.toLocaleDateString("th-TH", {
+        year: "numeric", month: "long", day: "numeric"
+      });
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    fetch("data/dashboard.php")
+      .then((res) => res.json())
+      .then((data) => {
+        console.log(data); // ✅ ตรวจสอบข้อมูล
+
+        const left = data.slice(0, 7);
+        const right = data.slice(7, 14);
+
+        const statusColor = {
+          completed: "text-green-600",
+          "in-progress": "text-blue-600",
+          pending: "text-gray-600",
+          delayed: "text-red-600",
+        };
+
+        let counts = {
+          completed: 0,
+          "in-progress": 0,
+          pending: 0,
+          delayed: 0,
+        };
+
+        function renderRow(job) {
+          counts[job.status] = (counts[job.status] || 0) + 1;
+          return `
+            <tr class="bg-gray-50">
+              <td class="p-2 text-center font-bold leading-tight">
+                <div class="text-sm text-gray-600">งานที่</div>
+                <div class="text-xl text-gray-900">${job.id}</div>
+              </td>
+              <td class="p-2">
+                <div class="font-bold">${job.jobName}</div>
+                <div class="text-xs text-gray-500">ผู้ปฏิบัติ: ${job.worker}</div>
+                <div class="text-xs text-gray-500">ช่วงเวลา: ${job.timeRange}</div>
+              </td>
+              <td class="p-2 text-sm">
+                <div>เริ่ม: <span class="text-purple-600 font-bold">${job.startTime}</span></div>
+                <div>เวลามาตรฐาน: <span class="text-orange-600 font-bold">${job.targetDuration}</span></div>
+                <div>เวลาที่ใช้: <span class="text-blue-600 font-bold">${job.actualDuration}</span></div>
+              </td>
+              <td class="p-2 text-center">
+                <span class="${statusColor[job.status] || "text-gray-600"} font-bold">
+                  ${
+                    job.status === "completed"
+                      ? "เสร็จสิ้น"
+                      : job.status === "in-progress"
+                      ? "กำลังทำ"
+                      : job.status === "delayed"
+                      ? "ล่าช้า"
+                      : "รอดำเนินการ"
+                  }
+                </span>
+              </td>
+            </tr>
+          `;
+        }
+
+        document.getElementById("left-table").innerHTML = left.map(renderRow).join("");
+        document.getElementById("right-table").innerHTML = right.map(renderRow).join("");
+
+        document.getElementById("done-count").textContent = counts.completed || 0;
+        document.getElementById("doing-count").textContent = counts["in-progress"] || 0;
+        document.getElementById("pending-count").textContent = counts.pending || 0;
+        document.getElementById("late-count").textContent = counts.delayed || 0;
+
+        const total = data.length;
+        document.getElementById("total-count").textContent = total;
+        document.getElementById("done-count-footer").textContent = counts.completed || 0;
+        const percent = total > 0 ? Math.round((counts.completed / total) * 100) : 0;
+        document.getElementById("done-percent").textContent = `${percent}%`;
+      });
+  </script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>ประวัติการทำงาน</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
+  <style>
+    .table td, .table th {
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2>📋 ประวัติการทำงาน</h2>
+      <a href="indexdemo.html" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> กลับ</a>
+    </div>
+
+    <table class="table table-bordered bg-white shadow-sm">
+      <thead class="table-light">
+        <tr>
+          <th>#</th>
+          <th>งานที่ผลิต</th>
+          <th>ขั้นตอน</th>
+          <th>เวลา</th>
+          <th>สถานะ</th>
+          <th>จัดการ</th>
+        </tr>
+      </thead>
+      <tbody id="logs-table">
+        <tr>
+          <td colspan="6" class="text-center text-danger">⏳ กำลังโหลด...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Bootstrap JS (ต้องมาก่อน script ของคุณ) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- JS สำหรับโหลดข้อมูล -->
+  <script>
+    async function fetchLogs() {
+      const table = document.getElementById("logs-table");
+      try {
+        const res = await fetch("data/get_data.php");
+        const json = await res.json();
+        table.innerHTML = "";
+
+        if (json.status === "success" && json.data.length > 0) {
+          json.data.forEach((log, index) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td>${index + 1}</td>
+              <td>งานที่-${log.job_number}</td>
+              <td>${log.number}</td>
+              <td>${new Date(log.timestamp).toLocaleString("th-TH")}</td>
+              <td>
+                <span class="badge ${log.status === 'start' ? 'bg-success' : 'bg-danger'}">
+                  ${log.status === 'start' ? 'เริ่มงาน' : 'หยุดงาน'}
+                </span>
+              </td>
+              <td><button class="btn btn-sm btn-outline-secondary" disabled>—</button></td>
+            `;
+            table.appendChild(row);
+          });
+        } else {
+          table.innerHTML = `<tr><td colspan="6" class="text-center text-danger">❌ ไม่มีข้อมูล</td></tr>`;
+        }
+      } catch (error) {
+        console.error("โหลด log ผิดพลาด:", error);
+        table.innerHTML = `<tr><td colspan="6" class="text-center text-danger">❌ ดึงข้อมูลไม่สำเร็จ</td></tr>`;
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", fetchLogs);
+  </script>
+</body>
+</html>

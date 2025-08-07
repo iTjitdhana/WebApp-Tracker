@@ -1,0 +1,30 @@
+# Use the official Node.js runtime as the base image
+FROM node:18-alpine
+
+# Set timezone to Asia/Bangkok
+ENV TZ=Asia/Bangkok
+RUN apk add --no-cache tzdata && \
+    cp /usr/share/zoneinfo/Asia/Bangkok /etc/localtime && \
+    echo "Asia/Bangkok" > /etc/timezone
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies (including dev dependencies)
+RUN npm install --legacy-peer-deps
+
+# Copy source code
+COPY . .
+
+# Set environment variables
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=development
+
+# Expose port
+EXPOSE 3000
+
+# Start the development server with hot reload
+CMD ["npm", "run", "dev"] 
